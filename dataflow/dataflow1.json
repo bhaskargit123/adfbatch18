@@ -1,0 +1,94 @@
+{
+	"name": "dataflow1",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"linkedService": {
+						"referenceName": "ls_azSQL_sourceDB",
+						"type": "LinkedServiceReference"
+					},
+					"name": "srcEmployee"
+				},
+				{
+					"linkedService": {
+						"referenceName": "ls_azSQL_targeDB",
+						"type": "LinkedServiceReference"
+					},
+					"name": "trgEmployee"
+				}
+			],
+			"sinks": [],
+			"transformations": [
+				{
+					"name": "srcSelect"
+				},
+				{
+					"name": "trgSelect"
+				},
+				{
+					"name": "lookup1"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          EmployeeNO as integer,",
+				"          Ename as string,",
+				"          Job as string,",
+				"          Hiredate as date,",
+				"          DepartmentNO as integer,",
+				"          Sal as decimal(19,4)",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'query',",
+				"     store: 'sqlserver',",
+				"     query: 'SELECT [EmployeeNO]\\n      ,[Ename]\\n      ,[Job]\\n      ,[Hiredate]\\n      ,[DepartmentNO]\\n      ,[Sal]\\n  FROM [dbo].[employee]',",
+				"     isolationLevel: 'READ_UNCOMMITTED') ~> srcEmployee",
+				"source(output(",
+				"          EmpKey as integer,",
+				"          EmployeeNO as integer,",
+				"          Ename as string,",
+				"          Job as string,",
+				"          Hiredate as date,",
+				"          DepartmentNO as integer,",
+				"          Sal as decimal(19,4),",
+				"          Flag as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'query',",
+				"     store: 'sqlserver',",
+				"     query: 'SELECT [EmpKey]\\n      ,[EmployeeNO]\\n      ,[Ename]\\n      ,[Job]\\n      ,[Hiredate]\\n      ,[DepartmentNO]\\n      ,[Sal]\\n      ,[Flag]\\n  FROM [dbo].[employeetype1]',",
+				"     isolationLevel: 'READ_UNCOMMITTED') ~> trgEmployee",
+				"srcEmployee select(mapColumn(",
+				"          src_EmployeeNO = EmployeeNO,",
+				"          src_Ename = Ename,",
+				"          src_Job = Job,",
+				"          src_Hiredate = Hiredate,",
+				"          src_DepartmentNO = DepartmentNO,",
+				"          src_Sal = Sal",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> srcSelect",
+				"trgEmployee select(mapColumn(",
+				"          trg_EmpKey = EmpKey,",
+				"          trg_EmployeeNO = EmployeeNO,",
+				"          trg_Ename = Ename,",
+				"          trg_Job = Job,",
+				"          trg_Hiredate = Hiredate,",
+				"          trg_DepartmentNO = DepartmentNO,",
+				"          trg_Sal = Sal,",
+				"          trg_Flag = Flag",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> trgSelect",
+				"srcSelect, trgSelect lookup(src_EmployeeNO == trg_EmployeeNO,",
+				"     multiple: false,",
+				"     pickup: 'any',",
+				"     broadcast: 'auto')~> lookup1"
+			]
+		}
+	}
+}
