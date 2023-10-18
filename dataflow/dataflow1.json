@@ -29,6 +29,9 @@
 				},
 				{
 					"name": "lookup1"
+				},
+				{
+					"name": "split1"
 				}
 			],
 			"scriptLines": [
@@ -87,7 +90,9 @@
 				"srcSelect, trgSelect lookup(src_EmployeeNO == trg_EmployeeNO,",
 				"     multiple: false,",
 				"     pickup: 'any',",
-				"     broadcast: 'auto')~> lookup1"
+				"     broadcast: 'auto')~> lookup1",
+				"lookup1 split(isNull(trg_EmployeeNO),",
+				"     disjoint: false) ~> split1@(NewRecords, UpdatedRecords)"
 			]
 		}
 	}
