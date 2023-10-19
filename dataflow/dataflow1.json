@@ -120,7 +120,7 @@
 				"     ),",
 				"     skipDuplicateMapInputs: true,",
 				"     skipDuplicateMapOutputs: true) ~> trgSelect",
-				"srcSelect, trgSelect exists(src_EmployeeNO == trgSelect@trg_EmployeeNO,",
+				"srcSelect, trgSelect exists(src_EmployeeNO == trg_EmployeeNO,",
 				"     negate:true,",
 				"     broadcast: 'auto')~> NewRecords",
 				"NewRecords derive(Flag = \"Inserted\") ~> CreatingFlag",
