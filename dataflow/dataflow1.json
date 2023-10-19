@@ -45,7 +45,19 @@
 					"name": "select1"
 				},
 				{
-					"name": "Exists"
+					"name": "lookup"
+				},
+				{
+					"name": "UpdatedRecords"
+				},
+				{
+					"name": "derivedColumn1"
+				},
+				{
+					"name": "select2"
+				},
+				{
+					"name": "alterRow1"
 				}
 			],
 			"scriptLines": [
@@ -101,7 +113,7 @@
 				"     ),",
 				"     skipDuplicateMapInputs: true,",
 				"     skipDuplicateMapOutputs: true) ~> trgSelect",
-				"srcSelect, trgSelect exists(src_EmployeeNO == trg_EmployeeNO,",
+				"srcSelect, trgSelect exists(src_EmployeeNO == trgSelect@trg_EmployeeNO,",
 				"     negate:true,",
 				"     broadcast: 'auto')~> NewRecords",
 				"NewRecords derive(Flag = \"Inserted\") ~> CreatingFlag",
@@ -116,9 +128,27 @@
 				"     ),",
 				"     skipDuplicateMapInputs: true,",
 				"     skipDuplicateMapOutputs: true) ~> select1",
-				"srcSelect, trgSelect exists(src_EmployeeNO == trg_EmployeeNO,",
-				"     negate:false,",
-				"     broadcast: 'auto')~> Exists",
+				"srcSelect, trgSelect lookup(src_EmployeeNO == trg_EmployeeNO,",
+				"     multiple: false,",
+				"     pickup: 'any',",
+				"     broadcast: 'auto')~> lookup",
+				"select2 split(ChangeFlag==1,",
+				"     disjoint: false) ~> UpdatedRecords@(UpdatedRecords)",
+				"lookup derive(ChangeFlag = iif(src_Ename!=trg_Ename || src_Job!=trg_Job || src_Sal!=trg_Sal, 1,0),",
+				"          Flag = \"Updated\") ~> derivedColumn1",
+				"derivedColumn1 select(mapColumn(",
+				"          EmployeeNO = src_EmployeeNO,",
+				"          Ename = src_Ename,",
+				"          Job = src_Job,",
+				"          Hiredate = src_Hiredate,",
+				"          DepartmentNO = src_DepartmentNO,",
+				"          Sal = src_Sal,",
+				"          ChangeFlag,",
+				"          Flag",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select2",
+				"UpdatedRecords@UpdatedRecords alterRow(updateIf(1==1)) ~> alterRow1",
 				"select1 sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     input(",
