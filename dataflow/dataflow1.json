@@ -28,10 +28,7 @@
 					"name": "trgSelect"
 				},
 				{
-					"name": "lookup1"
-				},
-				{
-					"name": "split1"
+					"name": "NewRecords"
 				}
 			],
 			"scriptLines": [
@@ -87,12 +84,9 @@
 				"     ),",
 				"     skipDuplicateMapInputs: true,",
 				"     skipDuplicateMapOutputs: true) ~> trgSelect",
-				"srcSelect, trgSelect lookup(src_EmployeeNO == trg_EmployeeNO,",
-				"     multiple: false,",
-				"     pickup: 'any',",
-				"     broadcast: 'auto')~> lookup1",
-				"lookup1 split(isNull(trg_EmployeeNO),",
-				"     disjoint: false) ~> split1@(NewRecords, UpdatedRecords)"
+				"srcSelect, trgSelect exists(src_EmployeeNO == trg_EmployeeNO,",
+				"     negate:true,",
+				"     broadcast: 'auto')~> NewRecords"
 			]
 		}
 	}
