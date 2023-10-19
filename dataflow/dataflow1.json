@@ -19,7 +19,15 @@
 					"name": "trgEmployee"
 				}
 			],
-			"sinks": [],
+			"sinks": [
+				{
+					"linkedService": {
+						"referenceName": "ls_azSQL_targeDB",
+						"type": "LinkedServiceReference"
+					},
+					"name": "sink1"
+				}
+			],
 			"transformations": [
 				{
 					"name": "srcSelect"
@@ -29,6 +37,15 @@
 				},
 				{
 					"name": "NewRecords"
+				},
+				{
+					"name": "CreatingFlag"
+				},
+				{
+					"name": "select1"
+				},
+				{
+					"name": "Exists"
 				}
 			],
 			"scriptLines": [
@@ -86,7 +103,54 @@
 				"     skipDuplicateMapOutputs: true) ~> trgSelect",
 				"srcSelect, trgSelect exists(src_EmployeeNO == trg_EmployeeNO,",
 				"     negate:true,",
-				"     broadcast: 'auto')~> NewRecords"
+				"     broadcast: 'auto')~> NewRecords",
+				"NewRecords derive(Flag = \"Inserted\") ~> CreatingFlag",
+				"CreatingFlag select(mapColumn(",
+				"          EmployeeNO = src_EmployeeNO,",
+				"          Ename = src_Ename,",
+				"          Job = src_Job,",
+				"          Hiredate = src_Hiredate,",
+				"          DepartmentNO = src_DepartmentNO,",
+				"          Sal = src_Sal,",
+				"          Flag",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select1",
+				"srcSelect, trgSelect exists(src_EmployeeNO == trg_EmployeeNO,",
+				"     negate:false,",
+				"     broadcast: 'auto')~> Exists",
+				"select1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          EmpKey as integer,",
+				"          EmployeeNO as integer,",
+				"          Ename as string,",
+				"          Job as string,",
+				"          Hiredate as date,",
+				"          DepartmentNO as integer,",
+				"          Sal as decimal(19,4),",
+				"          Flag as string",
+				"     ),",
+				"     format: 'table',",
+				"     store: 'sqlserver',",
+				"     schemaName: 'dbo',",
+				"     tableName: 'employeetype1',",
+				"     insertable: true,",
+				"     updateable: false,",
+				"     deletable: false,",
+				"     upsertable: false,",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          EmployeeNO,",
+				"          Ename,",
+				"          Job,",
+				"          Hiredate,",
+				"          DepartmentNO,",
+				"          Sal,",
+				"          Flag",
+				"     )) ~> sink1"
 			]
 		}
 	}
