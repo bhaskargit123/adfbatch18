@@ -43,9 +43,6 @@
 					"name": "trgSelect"
 				},
 				{
-					"name": "NewRecords"
-				},
-				{
 					"name": "CreatingFlag"
 				},
 				{
@@ -65,6 +62,9 @@
 				},
 				{
 					"name": "alterRow1"
+				},
+				{
+					"name": "exists1"
 				}
 			],
 			"scriptLines": [
@@ -120,10 +120,7 @@
 				"     ),",
 				"     skipDuplicateMapInputs: true,",
 				"     skipDuplicateMapOutputs: true) ~> trgSelect",
-				"srcSelect, trgSelect exists(src_EmployeeNO == trg_EmployeeNO,",
-				"     negate:true,",
-				"     broadcast: 'auto')~> NewRecords",
-				"NewRecords derive(Flag = \"Inserted\") ~> CreatingFlag",
+				"exists1 derive(Flag = \"Inserted\") ~> CreatingFlag",
 				"CreatingFlag select(mapColumn(",
 				"          EmployeeNO = src_EmployeeNO,",
 				"          Ename = src_Ename,",
@@ -156,6 +153,9 @@
 				"     skipDuplicateMapInputs: true,",
 				"     skipDuplicateMapOutputs: true) ~> select2",
 				"UpdatedRecords@UpdatedRecords alterRow(updateIf(1==1)) ~> alterRow1",
+				"srcSelect, trgSelect exists(src_EmployeeNO == ERROR_FUNCTION(''),",
+				"     negate:true,",
+				"     broadcast: 'auto')~> exists1",
 				"select1 sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     input(",
