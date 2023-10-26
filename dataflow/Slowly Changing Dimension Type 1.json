@@ -1,0 +1,222 @@
+{
+	"name": "Slowly Changing Dimension Type 1",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"linkedService": {
+						"referenceName": "ls_azSQL_sourceDB",
+						"type": "LinkedServiceReference"
+					},
+					"name": "srcEmployee"
+				},
+				{
+					"linkedService": {
+						"referenceName": "ls_azSQL_targeDB",
+						"type": "LinkedServiceReference"
+					},
+					"name": "trgEmployee"
+				}
+			],
+			"sinks": [
+				{
+					"linkedService": {
+						"referenceName": "ls_azSQL_targeDB",
+						"type": "LinkedServiceReference"
+					},
+					"name": "sink1"
+				},
+				{
+					"linkedService": {
+						"referenceName": "ls_azSQL_targeDB",
+						"type": "LinkedServiceReference"
+					},
+					"name": "sink2"
+				}
+			],
+			"transformations": [
+				{
+					"name": "srcSelect"
+				},
+				{
+					"name": "trgSelect"
+				},
+				{
+					"name": "exists1"
+				},
+				{
+					"name": "derivingFlag"
+				},
+				{
+					"name": "select1"
+				},
+				{
+					"name": "lookup1"
+				},
+				{
+					"name": "UpdatedRecords"
+				},
+				{
+					"name": "updatingFlag"
+				},
+				{
+					"name": "select2"
+				},
+				{
+					"name": "alterRow1"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          EmployeeNO as integer,",
+				"          Ename as string,",
+				"          Job as string,",
+				"          Hiredate as date,",
+				"          DepartmentNO as integer,",
+				"          Sal as decimal(19,4)",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'query',",
+				"     store: 'sqlserver',",
+				"     query: 'SELECT [EmployeeNO]\\n      ,[Ename]\\n      ,[Job]\\n      ,[Hiredate]\\n      ,[DepartmentNO]\\n      ,[Sal]\\n  FROM [dbo].[employee]',",
+				"     isolationLevel: 'READ_UNCOMMITTED') ~> srcEmployee",
+				"source(output(",
+				"          EmployeeNO as integer,",
+				"          Ename as string,",
+				"          Job as string,",
+				"          Hiredate as date,",
+				"          DepartmentNO as integer,",
+				"          Sal as decimal(19,4),",
+				"          Flag as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'query',",
+				"     store: 'sqlserver',",
+				"     query: 'SELECT \\n       [EmployeeNO]\\n      ,[Ename]\\n      ,[Job]\\n      ,[Hiredate]\\n      ,[DepartmentNO]\\n      ,[Sal]\\n      ,[Flag]\\n  FROM [dbo].[employeetype1]',",
+				"     isolationLevel: 'READ_UNCOMMITTED') ~> trgEmployee",
+				"srcEmployee select(mapColumn(",
+				"          src_EmployeeNO = EmployeeNO,",
+				"          src_Ename = Ename,",
+				"          src_Job = Job,",
+				"          src_Hiredate = Hiredate,",
+				"          src_DepartmentNO = DepartmentNO,",
+				"          src_Sal = Sal",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> srcSelect",
+				"trgEmployee select(mapColumn(",
+				"          trg_EmployeeNO = EmployeeNO,",
+				"          trg_Ename = Ename,",
+				"          trg_Job = Job,",
+				"          trg_Hiredate = Hiredate,",
+				"          trg_DepartmentNO = DepartmentNO,",
+				"          trg_Sal = Sal,",
+				"          trg_Flag = Flag",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> trgSelect",
+				"srcSelect, trgSelect exists(src_EmployeeNO == trg_EmployeeNO,",
+				"     negate:true,",
+				"     broadcast: 'auto')~> exists1",
+				"exists1 derive(Flag = 'Inserted') ~> derivingFlag",
+				"derivingFlag select(mapColumn(",
+				"          EmployeeNO = src_EmployeeNO,",
+				"          Ename = src_Ename,",
+				"          Job = src_Job,",
+				"          Hiredate = src_Hiredate,",
+				"          DepartmentNO = src_DepartmentNO,",
+				"          Sal = src_Sal,",
+				"          Flag",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select1",
+				"srcSelect, trgSelect lookup(src_EmployeeNO == trg_EmployeeNO,",
+				"     multiple: false,",
+				"     pickup: 'any',",
+				"     broadcast: 'auto')~> lookup1",
+				"lookup1 filter(src_Ename!=trg_Ename || src_Job!=trg_Job || src_Sal!=trg_Sal) ~> UpdatedRecords",
+				"UpdatedRecords derive(Flag = 'Updated') ~> updatingFlag",
+				"updatingFlag select(mapColumn(",
+				"          EmployeeNO = src_EmployeeNO,",
+				"          Ename = src_Ename,",
+				"          Job = src_Job,",
+				"          Hiredate = src_Hiredate,",
+				"          DepartmentNO = src_DepartmentNO,",
+				"          Sal = src_Sal,",
+				"          Flag",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select2",
+				"select2 alterRow(updateIf(1==1)) ~> alterRow1",
+				"select1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          EmpKey as integer,",
+				"          EmployeeNO as integer,",
+				"          Ename as string,",
+				"          Job as string,",
+				"          Hiredate as date,",
+				"          DepartmentNO as integer,",
+				"          Sal as decimal(19,4),",
+				"          Flag as string",
+				"     ),",
+				"     format: 'table',",
+				"     store: 'sqlserver',",
+				"     schemaName: 'dbo',",
+				"     tableName: 'employeetype1',",
+				"     insertable: true,",
+				"     updateable: false,",
+				"     deletable: false,",
+				"     upsertable: false,",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          EmployeeNO,",
+				"          Ename,",
+				"          Job,",
+				"          Hiredate,",
+				"          DepartmentNO,",
+				"          Sal,",
+				"          Flag",
+				"     )) ~> sink1",
+				"alterRow1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          EmpKey as integer,",
+				"          EmployeeNO as integer,",
+				"          Ename as string,",
+				"          Job as string,",
+				"          Hiredate as date,",
+				"          DepartmentNO as integer,",
+				"          Sal as decimal(19,4),",
+				"          Flag as string",
+				"     ),",
+				"     format: 'table',",
+				"     store: 'sqlserver',",
+				"     schemaName: 'dbo',",
+				"     tableName: 'employeetype1',",
+				"     insertable: false,",
+				"     updateable: true,",
+				"     deletable: false,",
+				"     upsertable: false,",
+				"     keys:['EmployeeNO'],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          EmployeeNO,",
+				"          Ename,",
+				"          Job,",
+				"          Hiredate,",
+				"          DepartmentNO,",
+				"          Sal,",
+				"          Flag",
+				"     )) ~> sink2"
+			]
+		}
+	}
+}
