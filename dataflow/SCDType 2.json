@@ -20,7 +20,26 @@
 				}
 			],
 			"sinks": [],
-			"transformations": [],
+			"transformations": [
+				{
+					"name": "srcSelect"
+				},
+				{
+					"name": "trgSelect"
+				},
+				{
+					"name": "NewRecords"
+				},
+				{
+					"name": "UpdatedRecords"
+				},
+				{
+					"name": "ForUpdatedRecords"
+				},
+				{
+					"name": "ReqColSelect"
+				}
+			],
 			"scriptLines": [
 				"source(output(",
 				"          EmployeeNO as integer,",
@@ -50,7 +69,46 @@
 				"     format: 'query',",
 				"     store: 'sqlserver',",
 				"     query: 'SELECT [SurrKey]\\n      ,[EmployeeNO]\\n      ,[Ename]\\n      ,[Job]\\n      ,[Hiredate]\\n      ,[DepartmentNO]\\n      ,[Sal]\\n  FROM [dbo].[employeeSCDType2]\\n  WHERE EndDate IS NULL',",
-				"     isolationLevel: 'READ_UNCOMMITTED') ~> srcemployeeSCDType2"
+				"     isolationLevel: 'READ_UNCOMMITTED') ~> srcemployeeSCDType2",
+				"srcEmployee select(mapColumn(",
+				"          src_EmployeeNO = EmployeeNO,",
+				"          src_Ename = Ename,",
+				"          src_Job = Job,",
+				"          src_Hiredate = Hiredate,",
+				"          src_DepartmentNO = DepartmentNO,",
+				"          src_Sal = Sal",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> srcSelect",
+				"srcemployeeSCDType2 select(mapColumn(",
+				"          SurrKey,",
+				"          trg_EmployeeNO = EmployeeNO,",
+				"          trg_Ename = Ename,",
+				"          trg_Job = Job,",
+				"          trg_Hiredate = Hiredate,",
+				"          trg_DepartmentNO = DepartmentNO,",
+				"          trg_Sal = Sal",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> trgSelect",
+				"srcSelect, trgSelect exists(src_EmployeeNO == trg_EmployeeNO,",
+				"     negate:true,",
+				"     broadcast: 'auto')~> NewRecords",
+				"srcSelect, trgSelect lookup(src_EmployeeNO == trg_EmployeeNO,",
+				"     multiple: false,",
+				"     pickup: 'any',",
+				"     broadcast: 'auto')~> UpdatedRecords",
+				"UpdatedRecords filter(src_Ename!=trg_Ename || src_Job!=trg_Job || src_Sal!=trg_Sal) ~> ForUpdatedRecords",
+				"ForUpdatedRecords select(mapColumn(",
+				"          EmployeeNO = src_EmployeeNO,",
+				"          Ename = src_Ename,",
+				"          Job = src_Job,",
+				"          Hiredate = src_Hiredate,",
+				"          DepartmentNO = src_DepartmentNO,",
+				"          Sal = src_Sal",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> ReqColSelect"
 			]
 		}
 	}
