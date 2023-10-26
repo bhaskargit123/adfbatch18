@@ -57,7 +57,7 @@
 					"name": "NewAndUpdated"
 				},
 				{
-					"name": "UpdateFlags"
+					"name": "select1"
 				}
 			],
 			"scriptLines": [
@@ -143,10 +143,11 @@
 				"     skipDuplicateMapOutputs: true) ~> ReqColSelectNew",
 				"ReqColSelect, ReqColSelectNew union(byName: true)~> NewAndUpdated",
 				"ForUpdatedRecords select(mapColumn(",
-				"          SurrKey",
+				"          SurrKey,",
+				"          trg_EmployeeNO",
 				"     ),",
 				"     skipDuplicateMapInputs: true,",
-				"     skipDuplicateMapOutputs: true) ~> UpdateFlags",
+				"     skipDuplicateMapOutputs: true) ~> select1",
 				"DeriveFlags sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     input(",
