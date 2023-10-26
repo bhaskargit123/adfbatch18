@@ -26,6 +26,13 @@
 						"type": "LinkedServiceReference"
 					},
 					"name": "sink1"
+				},
+				{
+					"linkedService": {
+						"referenceName": "ls_azSQL_targeDB",
+						"type": "LinkedServiceReference"
+					},
+					"name": "sink2"
 				}
 			],
 			"transformations": [
@@ -61,6 +68,9 @@
 				},
 				{
 					"name": "UpdatingFlags"
+				},
+				{
+					"name": "alterRow1"
 				}
 			],
 			"scriptLines": [
@@ -146,13 +156,13 @@
 				"     skipDuplicateMapOutputs: true) ~> ReqColSelectNew",
 				"ReqColSelect, ReqColSelectNew union(byName: true)~> NewAndUpdated",
 				"ForUpdatedRecords select(mapColumn(",
-				"          SurrKey,",
-				"          trg_EmployeeNO",
+				"          SurrKey",
 				"     ),",
 				"     skipDuplicateMapInputs: true,",
 				"     skipDuplicateMapOutputs: true) ~> select1",
 				"select1 derive(IsActive = 0,",
 				"          EndDate = currentDate()) ~> UpdatingFlags",
+				"UpdatingFlags alterRow(updateIf(true())) ~> alterRow1",
 				"DeriveFlags sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     input(",
@@ -187,7 +197,38 @@
 				"          Sal,",
 				"          IsActive,",
 				"          StartDate",
-				"     )) ~> sink1"
+				"     )) ~> sink1",
+				"alterRow1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          SurrKey as integer,",
+				"          EmployeeNO as integer,",
+				"          Ename as string,",
+				"          Job as string,",
+				"          Hiredate as date,",
+				"          DepartmentNO as integer,",
+				"          Sal as decimal(19,4),",
+				"          IsActive as integer,",
+				"          StartDate as date,",
+				"          EndDate as date",
+				"     ),",
+				"     format: 'table',",
+				"     store: 'sqlserver',",
+				"     schemaName: 'dbo',",
+				"     tableName: 'employeeSCDType2',",
+				"     insertable: false,",
+				"     updateable: true,",
+				"     deletable: false,",
+				"     upsertable: false,",
+				"     keys:['SurrKey'],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          SurrKey,",
+				"          IsActive,",
+				"          EndDate",
+				"     )) ~> sink2"
 			]
 		}
 	}
