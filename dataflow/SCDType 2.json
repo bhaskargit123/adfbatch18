@@ -58,6 +58,9 @@
 				},
 				{
 					"name": "select1"
+				},
+				{
+					"name": "UpdatingFlags"
 				}
 			],
 			"scriptLines": [
@@ -148,6 +151,8 @@
 				"     ),",
 				"     skipDuplicateMapInputs: true,",
 				"     skipDuplicateMapOutputs: true) ~> select1",
+				"select1 derive(IsActive = 0,",
+				"          EndDate = currentDate()) ~> UpdatingFlags",
 				"DeriveFlags sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     input(",
