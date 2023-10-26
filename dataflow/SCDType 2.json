@@ -19,7 +19,15 @@
 					"name": "srcemployeeSCDType2"
 				}
 			],
-			"sinks": [],
+			"sinks": [
+				{
+					"linkedService": {
+						"referenceName": "ls_azSQL_targeDB",
+						"type": "LinkedServiceReference"
+					},
+					"name": "sink1"
+				}
+			],
 			"transformations": [
 				{
 					"name": "srcSelect"
@@ -44,6 +52,12 @@
 				},
 				{
 					"name": "ReqColSelectNew"
+				},
+				{
+					"name": "NewAndUpdated"
+				},
+				{
+					"name": "UpdateFlags"
 				}
 			],
 			"scriptLines": [
@@ -115,18 +129,59 @@
 				"     ),",
 				"     skipDuplicateMapInputs: true,",
 				"     skipDuplicateMapOutputs: true) ~> ReqColSelect",
-				"ReqColSelect derive(IsActive = 1,",
+				"NewAndUpdated derive(IsActive = 1,",
 				"          StartDate = currentDate()) ~> DeriveFlags",
 				"NewRecords select(mapColumn(",
 				"          EmployeeNO = src_EmployeeNO,",
 				"          Ename = src_Ename,",
 				"          Job = src_Job,",
 				"          Hiredate = src_Hiredate,",
-				"          src_DepartmentNO,",
-				"          src_Sal",
+				"          DepartmentNO = src_DepartmentNO,",
+				"          Sal = src_Sal",
 				"     ),",
 				"     skipDuplicateMapInputs: true,",
-				"     skipDuplicateMapOutputs: true) ~> ReqColSelectNew"
+				"     skipDuplicateMapOutputs: true) ~> ReqColSelectNew",
+				"ReqColSelect, ReqColSelectNew union(byName: true)~> NewAndUpdated",
+				"ForUpdatedRecords select(mapColumn(",
+				"          SurrKey",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> UpdateFlags",
+				"DeriveFlags sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          SurrKey as integer,",
+				"          EmployeeNO as integer,",
+				"          Ename as string,",
+				"          Job as string,",
+				"          Hiredate as date,",
+				"          DepartmentNO as integer,",
+				"          Sal as decimal(19,4),",
+				"          IsActive as integer,",
+				"          StartDate as date,",
+				"          EndDate as date",
+				"     ),",
+				"     format: 'table',",
+				"     store: 'sqlserver',",
+				"     schemaName: 'dbo',",
+				"     tableName: 'employeeSCDType2',",
+				"     insertable: true,",
+				"     updateable: false,",
+				"     deletable: false,",
+				"     upsertable: false,",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          EmployeeNO,",
+				"          Ename,",
+				"          Job,",
+				"          Hiredate,",
+				"          DepartmentNO,",
+				"          Sal,",
+				"          IsActive,",
+				"          StartDate",
+				"     )) ~> sink1"
 			]
 		}
 	}
