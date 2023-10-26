@@ -38,6 +38,12 @@
 				},
 				{
 					"name": "ReqColSelect"
+				},
+				{
+					"name": "DeriveFlags"
+				},
+				{
+					"name": "ReqColSelectNew"
 				}
 			],
 			"scriptLines": [
@@ -108,7 +114,19 @@
 				"          Sal = src_Sal",
 				"     ),",
 				"     skipDuplicateMapInputs: true,",
-				"     skipDuplicateMapOutputs: true) ~> ReqColSelect"
+				"     skipDuplicateMapOutputs: true) ~> ReqColSelect",
+				"ReqColSelect derive(IsActive = 1,",
+				"          StartDate = currentDate()) ~> DeriveFlags",
+				"NewRecords select(mapColumn(",
+				"          EmployeeNO = src_EmployeeNO,",
+				"          Ename = src_Ename,",
+				"          Job = src_Job,",
+				"          Hiredate = src_Hiredate,",
+				"          src_DepartmentNO,",
+				"          src_Sal",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> ReqColSelectNew"
 			]
 		}
 	}
