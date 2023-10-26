@@ -3,11 +3,54 @@
 	"properties": {
 		"type": "MappingDataFlow",
 		"typeProperties": {
-			"sources": [],
+			"sources": [
+				{
+					"linkedService": {
+						"referenceName": "ls_azSQL_sourceDB",
+						"type": "LinkedServiceReference"
+					},
+					"name": "srcEmployee"
+				},
+				{
+					"linkedService": {
+						"referenceName": "ls_azSQL_targeDB",
+						"type": "LinkedServiceReference"
+					},
+					"name": "srcemployeeSCDType2"
+				}
+			],
 			"sinks": [],
 			"transformations": [],
 			"scriptLines": [
-				""
+				"source(output(",
+				"          EmployeeNO as integer,",
+				"          Ename as string,",
+				"          Job as string,",
+				"          Hiredate as date,",
+				"          DepartmentNO as integer,",
+				"          Sal as decimal(19,4)",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'query',",
+				"     store: 'sqlserver',",
+				"     query: 'SELECT [EmployeeNO]\\n      ,[Ename]\\n      ,[Job]\\n      ,[Hiredate]\\n      ,[DepartmentNO]\\n      ,[Sal]\\n  FROM [dbo].[employee]',",
+				"     isolationLevel: 'READ_UNCOMMITTED') ~> srcEmployee",
+				"source(output(",
+				"          SurrKey as integer,",
+				"          EmployeeNO as integer,",
+				"          Ename as string,",
+				"          Job as string,",
+				"          Hiredate as date,",
+				"          DepartmentNO as integer,",
+				"          Sal as decimal(19,4)",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'query',",
+				"     store: 'sqlserver',",
+				"     query: 'SELECT [SurrKey]\\n      ,[EmployeeNO]\\n      ,[Ename]\\n      ,[Job]\\n      ,[Hiredate]\\n      ,[DepartmentNO]\\n      ,[Sal]\\n  FROM [dbo].[employeeSCDType2]\\n  WHERE EndDate IS NULL',",
+				"     isolationLevel: 'READ_UNCOMMITTED') ~> srcemployeeSCDType2"
 			]
 		}
 	}
